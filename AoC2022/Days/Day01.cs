@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Console;
 
 namespace AoC2022
 {
@@ -24,7 +25,7 @@ namespace AoC2022
 				} 
 				else if (!lastBlank && input[i] == "")
 				{
-					Log($"Completed this elf with a total of {elves.Last().Sum()} across {elves.Last().Count} different food items.");
+					WriteLine($"Completed this elf with a total of {elves.Last().Sum()} across {elves.Last().Count} different food items.");
 					lastBlank = true;
 				}
 				if (input[i] != "")
@@ -36,8 +37,8 @@ namespace AoC2022
 
 			var top = elves.OrderByDescending(elf => elf.Sum()).ToList();
 			
-			Log($"The elf who has the most calories has: {top[0].Sum()} calories.");
-			Log($"The top three elves have: {top.GetRange(0, 3).Sum(elf => elf.Sum())} calories.");
+			WriteLine($"The elf who has the most calories has: {top[0].Sum()} calories.");
+			WriteLine($"The top three elves have: {top.GetRange(0, 3).Sum(elf => elf.Sum())} calories.");
 		}
 	}
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Console;
 
 namespace AoC2022
 {
@@ -44,7 +45,7 @@ namespace AoC2022
 				string str = input[i].ToUpperInvariant();
 				if (str.Length == 3)
 					guide.Add((str[0], str[2]));
-				else Log("Warn: line with invalid input?");
+				else WriteLine("Warn: line with invalid input?");
 			}
 
 			for (int i = 0; i < guide.Count; i++)
@@ -53,7 +54,7 @@ namespace AoC2022
 				int you = guide[i].You - 'X';
 				score += RPS(foe, you);
 			}
-			Log($"Part 1 Total Score: {score}");
+			WriteLine($"Part 1 Total Score: {score}");
 
 			score = 0;
 			for (int i = 0; i < guide.Count; i++)
@@ -74,7 +75,7 @@ namespace AoC2022
 				}
 				score += RPS(foe, you);
 			}
-			Log($"Part 2 Total Score: {score}");
+			WriteLine($"Part 2 Total Score: {score}");
 		}
 	}
 }

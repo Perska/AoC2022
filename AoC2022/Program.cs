@@ -12,13 +12,13 @@ namespace AoC2022
 
 		public static List<DayProgram> days = new List<DayProgram>
 		{
-			Day01, Day02
+			Day01, Day02, Day03
 		};
 
 		public delegate void LogFunc(string str);
 
-		public static LogFunc Log = Console.WriteLine;
-		public static LogFunc LogL = Console.Write;
+		//public static LogFunc WriteLine = Console.WriteLine;
+		//public static LogFunc Write = Console.Write;
 
 		public class UseSRLAttribute : Attribute
 		{
