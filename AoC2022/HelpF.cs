@@ -18,14 +18,32 @@ namespace AoC2022
 			return str.Split(new string[] { split }, removeEmpty ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None);
 		}
 
+		// Split a string into separate strings, as specified by the delimiter.
+		public static string[] SplitToStringArray(this string str, char[] split, bool removeEmpty)
+		{
+			return str.Split(split, removeEmpty ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None);
+		}
+
 		// Split a string into an int array.
 		public static int[] SplitToIntArray(this string str, string split)
 		{
 			return Array.ConvertAll(str.SplitToStringArray(split, true), s => int.Parse(s));
 		}
 
+		// Split a string into an int array.
+		public static int[] SplitToIntArray(this string str, params char[] split)
+		{
+			return Array.ConvertAll(str.SplitToStringArray(split, true), s => int.Parse(s));
+		}
+
 		// Split a string into a long array.
 		public static long[] SplitToLongArray(this string str, string split)
+		{
+			return Array.ConvertAll(str.SplitToStringArray(split, true), s => long.Parse(s));
+		}
+
+		// Split a string into a long array.
+		public static long[] SplitToLongArray(this string str, params char[] split)
 		{
 			return Array.ConvertAll(str.SplitToStringArray(split, true), s => long.Parse(s));
 		}
