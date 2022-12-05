@@ -3,12 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Diagnostics;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace AoC2022
 {
 	partial class Program
 	{
 		public delegate void DayProgram(List<string> input);
+
+		public delegate void DrawCall(dynamic args);
 
 		public static List<DayProgram> days = new List<DayProgram>
 		{
@@ -30,11 +36,136 @@ namespace AoC2022
 
 		}
 
+		public class HasVisualAttribute : Attribute
+		{
+
+		}
+
+
+		static void Draw(DrawCall drawCall, dynamic args)
+		{
+			/*long elaps;
+			while ((elaps = stopwatch.ElapsedMilliseconds) < next) ;
+			next = elaps + 20;*/
+
+			visual.GraphicsDevice.SetRenderTarget(visual.RenderTarget);
+			drawCall(args);
+			visual.GraphicsDevice.SetRenderTarget(null);
+
+			visual.GraphicsDevice.Clear(Color.Black);
+			visual.SpriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
+			visual.SpriteBatch.Draw(visual.RenderTarget, Vector2.Zero, Color.White);
+			visual.SpriteBatch.End();
+			//Application.DoEvents();
+			visual.GraphicsDevice.Present();
+		}
+
+		static bool AutoSpriteBatch, OtherBuffer;
+
+		static void StartDraw(bool clear, bool otherBuffer = false, bool autoSpriteBatch = true)
+		{
+			AutoSpriteBatch = autoSpriteBatch;
+			OtherBuffer = otherBuffer;
+			visual.GraphicsDevice.SetRenderTarget(otherBuffer ? visual.RenderTarget2 : visual.RenderTarget);
+			if (clear) visual.GraphicsDevice.Clear(Color.Transparent);
+			if (autoSpriteBatch) visual.SpriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
+		}
+
+		static void StopDraw()
+		{
+			if (AutoSpriteBatch) visual.SpriteBatch.End();
+			visual.GraphicsDevice.SetRenderTarget(null);
+			visual.GraphicsDevice.Clear(Color.Black);
+			visual.SpriteBatch.Begin();
+			visual.SpriteBatch.Draw(visual.RenderTarget, Vector2.Zero, Color.White);
+			if (OtherBuffer)
+				visual.SpriteBatch.Draw(visual.RenderTarget2, Vector2.Zero, Color.White);
+			visual.SpriteBatch.End();
+
+			//Application.DoEvents();
+			//visual.Window.Focus();
+			//visual.Window.BringToFront();
+			visual.GraphicsDevice.Present();
+		}
+
+		static void InitDraw(dynamic args)
+		{
+			visual.GraphicsDevice.Clear(Color.Black);
+			visual.GraphicsDevice.SetRenderTarget(visual.RenderTarget);
+			visual.GraphicsDevice.Clear(Color.Transparent);
+			visual.GraphicsDevice.SetRenderTarget(null);
+		}
+
+
+		static void Vsync()
+		{
+			if (frameSpeed == 0) return;
+			waitScreen = true;
+			while (waitScreen) ;
+		}
+
+		static Visual visual;
+		static Stopwatch stopwatch;
+		static long next;
+
+		static bool waitScreen = false;
+		static int frameSpeed = 100;
+
 		[STAThread]
 		static void Main()
 		{
 			bool keepGoing = true;
-			
+			bool busy = false;
+			bool ready = false;
+
+			System.Threading.Thread msg = new System.Threading.Thread(() =>
+			{
+				visual = new Visual();
+				//Application.Run(visual.Window);
+				while (!ready) ;
+				while (true)
+				{
+					long elaps;
+					while ((elaps = stopwatch.ElapsedMilliseconds) < next) ;
+					next = elaps + frameSpeed;
+					waitScreen = false;
+					Application.DoEvents();
+					if (!busy)
+					{
+						visual.GraphicsDevice.Clear(Color.Transparent);
+						visual.SpriteBatch.Begin();
+						visual.SpriteBatch.Draw(visual.RenderTarget, Vector2.Zero, Color.White);
+						visual.SpriteBatch.End();
+						visual.GraphicsDevice.Present();
+					}
+				}
+			});
+			msg.SetApartmentState(System.Threading.ApartmentState.STA);
+			msg.IsBackground = true;
+			msg.Start();
+
+			//visual = new Visual();
+
+			while (visual == null) ;
+
+			bool formOpen = true;
+
+			visual.Window.FormClosing += (object sender, FormClosingEventArgs e) =>
+			{
+				if (busy && e.CloseReason == CloseReason.UserClosing) e.Cancel = true;
+			};
+			visual.Window.FormClosed += (object sender, FormClosedEventArgs e) => { formOpen = false; Environment.Exit(0); };
+
+			stopwatch = new Stopwatch();
+			stopwatch.Start();
+			long x = Stopwatch.Frequency / 60;
+
+			busy = true;
+			Draw(InitDraw, null);
+			busy = false;
+
+			ready = true;
+
 			//Console.WriteLine(SuperReadLine());
 			while (keepGoing)
 			{
@@ -59,6 +190,13 @@ namespace AoC2022
 					{
 						bool useSRL = program.Method.GetCustomAttributes(typeof(UseSRLAttribute), false).Any();
 						bool trailingNewLine = !program.Method.GetCustomAttributes(typeof(NoTrailingNewLineAttribute), false).Any();
+						bool hasVisual = program.Method.GetCustomAttributes(typeof(HasVisualAttribute), false).Any();
+						if (!hasVisual)
+						{
+							Console.WriteLine($"The program for Day {day} does not have a visualization implemented.\nProceed anyway? (y/n)");
+							if (!Console.ReadLine().StartsWith("y")) continue;
+						}
+
 						List<string> input = new List<string>();
 						Console.WriteLine("Please enter the program input. Once done, enter \"end\"\n(To instantly read the clipboard input, type \"paste\")");
 						while (true)
@@ -88,11 +226,15 @@ namespace AoC2022
 						{
 							input.Add("");
 						}
-						if (input.LastOrDefault() == "" && !trailingNewLine)
+						if (input.Last() == "" && !trailingNewLine)
 						{
 							input.RemoveAt(input.Count - 1);
 						}
+						busy = true;
+						frameSpeed = 20;
+						Draw(InitDraw, null);
 						program(input);
+						busy = false;
 					}
 				}
 				else
