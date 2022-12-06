@@ -12,9 +12,25 @@ namespace AoC2022
 	{
 		// [UseSRL] // Uncomment if you wanna use SuperReadLine
 		// [NoTrailingNewLine] // Uncomment to not include an extra blank line in the input at the end
-		static void Day00(List<string> input)
+		static void Day06(List<string> input)
 		{
-			// My code goes here...
+			string str = string.Join("", input);
+
+			int find(int chars)
+			{
+				for (int i = 0; i < str.Length - chars; i++)
+				{
+					string check = str.Substring(i, chars);
+					if (check.Distinct().Count() == chars)
+					{
+						return i + chars;
+					}
+				}
+				return 0;
+			}
+
+			WriteLine($"Part 1: {find(4)}");
+			WriteLine($"Part 2: {find(14)}");
 		}
 	}
 }
