@@ -12,7 +12,7 @@ namespace AoC2022
 
 		public static List<DayProgram> days = new List<DayProgram>
 		{
-			Day01, Day02, Day03, Day04, Day05, Day06, Day07
+			Day01, Day02, Day03, Day04, Day05, Day06, Day07, Day08
 		};
 
 		public delegate void LogFunc(string str);
