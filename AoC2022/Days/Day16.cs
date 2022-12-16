@@ -15,7 +15,7 @@ namespace AoC2022
 		static void Day16(List<string> input)
 		{
 			var valves = new Dictionary<string, (int Rate, string[] Leads)>();
-			var valves2 = new Dictionary<string, (int Rate, (string Destination, int Cost)[] Leads)>();
+			var valves2 = new Dictionary<int, (int Rate, (int Destination, int Cost)[] Leads)>();
 
 			foreach (var line in input)
 			{
@@ -27,92 +27,14 @@ namespace AoC2022
 				Array.Copy(split, 10, leads, 0, count);
 				valves[valve] = (rate, leads);
 			}
-			;
-
-			/*var explore = new Queue<(string location, string path, int rate, int total)>();
-			var exploreNext = new Queue<(string location, string path, int rate, int total)>();
-			var terminated = new Dictionary<(int rate, int total), bool>();
-			int bestScore = 0;
-			int bestRate = 0;
-
-			void process(string location, string path, int rate, int total)
-			{
-				total += rate;
-				bool actions = false;
-				if (location != null)
-				{
-					if (path.Length / 2 > 10)
-					{
-						// Cut down on paths that show no promise
-						if (total < bestScore * 0.9 || rate < bestRate * 0.5) return;
-					}
-					if (valves[location].Rate != 0 && !path.Contains($"¤{location}"))
-					{
-						exploreNext.Enqueue((location, path + $"¤{location}", rate + valves[location].Rate, total));
-						actions = true;
-					}
-					foreach (string valve in valves[location].Leads)
-					{
-						if (path.Length == 3)
-						{
-							if (valve == "AA") continue;
-						}
-						else if (path.Length >= 6)
-						{
-							string[] history = path.Split('¤');
-							//WriteLine(history[history.Length - 1]);
-							if (history[history.Length - 1].Contains(valve)) continue;
-						}
-						actions = true;
-						exploreNext.Enqueue((valve, path + $">{valve}", rate, total));
-					}
-				}
-				if (total > bestScore)
-				{
-					bestScore = total;
-				}
-				if (rate > bestRate)
-				{
-					bestRate = rate;
-				}
-				if (!actions)
-				{
-					terminated[(rate, total)] = true;
-				}
-			}
-			
-			process("AA", "", 0, 0);
-			for (int i = 0; i < 30; i++)
-			{
-				//WriteLine(i);
-				while (explore.Count > 0)
-				{
-					var exp = explore.Dequeue();
-					process(exp.location, exp.path, exp.rate, exp.total);
-				}
-				(explore, exploreNext) = (exploreNext, explore);
-				foreach (var path in terminated)
-				{
-					explore.Enqueue((null, null, path.Key.rate, path.Key.total));
-				}
-			}
-			WriteLine($"Part 1: {bestScore}");
-			explore.Clear();*/
-
-			/*var exploreCoop = new Queue<(string location, uint path, int cooldown, string locationP2, uint pathP2, int cooldownP2, uint mask, int rate, int total, int moves, int enabled)>();
-			var exploreNextCoop = new Queue<(string location, uint path, int cooldown, string locationP2, uint pathP2, int cooldownP2, uint mask, int rate, int total, int moves, int enabled)>();
-			var terminatedCoop = new Dictionary<(int rate, int total), bool>();
-			int bestScoreCoop = 0;
-			int bestProjectedCoop = 0;
-			int bestRateCoop = 0;*/
 
 			int maxRate = valves.Sum(v => v.Value.Rate);
 			int maxValves = valves.Count(v => v.Value.Rate > 0);
 			
 			foreach (var valve in valves.Where(v => v.Value.Rate > 0 || v.Key == "AA"))
 			{
-				var destinations = new List<(string Destination, int Cost)>();
-				//WriteLine($"From {valve.Key}");
+				var destinations = new List<(int Destination, int Cost)>();
+				
 				foreach (var dest in valves.Where(v => v.Value.Rate > 0 && v.Key != valve.Key))
 				{
 					var visited = new Dictionary<string, int>();
@@ -130,7 +52,6 @@ namespace AoC2022
 						}
 						if (find.Count == 0) (find, findNext) = (findNext, find);
 					}
-					//WriteLine(best.Where(item => map[item.Key.X, item.Key.Y] == 0).Min(item => item.Value));
 
 					void tryGo(string from, int price, string to)
 					{
@@ -139,42 +60,32 @@ namespace AoC2022
 						visited[to] = price + 1;
 						findNext.Enqueue((to, price + 1));
 					}
-					//WriteLine($" To {dest.Key}: {visited[dest.Key]}");
-					destinations.Add((dest.Key, visited[dest.Key]));
-					//valves2[valve]
+					int key2 = (dest.Key[0] - 'A') | (dest.Key[1] - 'A') << 16;
+					destinations.Add((key2, visited[dest.Key]));
 				}
-				valves2[valve.Key] = (valve.Value.Rate, destinations.ToArray());
+				int key = (valve.Key[0] - 'A') | (valve.Key[1] - 'A') << 16;
+				valves2[key] = (valve.Value.Rate, destinations.ToArray());
 			}
 			
-			var valveMask = new Dictionary<string, uint>();
+			var valveMask = new Dictionary<int, uint>();
 			uint mask = 1;
 			foreach (var item in valves2)
 			{
 				valveMask[item.Key] = mask;
 				mask <<= 1;
 			}
-
-			int cacheHit = 0;
-			System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
-			watch.Start();
 			
-			var cache = new Dictionary<(int Minute, int Cooldown, string Location, uint Path), int>();
-			var x = dfs("AA", 0, 0, 0, 0, 0, 0, 0);
-			watch.Stop();
-			WriteLine($"Part 1: {x}\nThat took {watch.ElapsedMilliseconds}ms (or {watch.Elapsed})");
-			;
-			int dfs(string location, uint path, int cooldown, uint enableMask, int rate, int total, int moves, int enabled)
+			var cache = new Dictionary<(int Minute, int Cooldown, int Location, uint Path), int>();
+			var x = dfs(0, 0, 0, 0, 0, 0, 0, 0);
+			WriteLine($"Part 1: {x}");
+			int dfs(int location, uint path, int cooldown, uint enableMask, int rate, int total, int moves, int enabled)
 			{
 				int premod = cooldown;
 				int cached = cache.Read((moves, cooldown, location, path), -1);
-				if (cached != -1)
-				{
-					cacheHit++;
-					return rate + cached;
-				}
+				if (cached != -1) return rate + cached;
 
-				var exploreables = new List<(string location, string path, int boost, int cost)>();
-				var exploreablesP2 = new List<(string location, string path, int boost, int cost)>();
+				var exploreables = new List<(int location, int boost, int cost)>();
+				var exploreablesP2 = new List<(int location, int boost, int cost)>();
 
 				int best = 0;
 
@@ -194,12 +105,12 @@ namespace AoC2022
 						foreach (var (Destination, Cost) in valves2[location].Leads)
 						{
 							if ((path & valveMask[Destination]) != 0) continue;
-							exploreables.Add((Destination, $"{Destination}", 0, Cost + 1));
+							exploreables.Add((Destination, 0, Cost + 1));
 						}
 					}
 					if (exploreables.Count == 0)
 					{
-						exploreables.Add((location, $"{location}", 0, 0));
+						exploreables.Add((location, 0, 0));
 					}
 					foreach (var act in exploreables)
 					{
@@ -208,7 +119,7 @@ namespace AoC2022
 							//WriteLine($"{act.path}: {watch.Elapsed}");
 						}
 						int turned = Math.Sign(act.boost);
-						best = Math.Max(best, dfs(act.location, path | valveMask[act.path], cooldown + act.cost, enableMask | (act.boost > 0 ? valveMask[location] : 0), rate + act.boost, total, moves + 1, enabled + turned));
+						best = Math.Max(best, dfs(act.location, path | valveMask[act.location], cooldown + act.cost, enableMask | (act.boost > 0 ? valveMask[location] : 0), rate + act.boost, total, moves + 1, enabled + turned));
 					}
 				}
 
@@ -216,20 +127,17 @@ namespace AoC2022
 				return rate + best;
 			}
 			cache.Clear();
-			watch.Restart();
 			int bestScore = 0;
-			var cache2 = new Dictionary<(int Minute, int Cooldown, string Location, int CooldownP2, string LocationP2, uint Path), bool>();
-			dfs2("AA", 0, 0, "AA", 0, 0, 0, 0, 0);
-			watch.Stop();
-			WriteLine($"Part 2: {bestScore}\nThat took {watch.ElapsedMilliseconds}ms (or {watch.Elapsed})");
-			void dfs2(string location, uint path, int cooldown, string locationP2, uint pathP2, int cooldownP2, uint enableMask, int total, int moves)
+			var cache2 = new Dictionary<(int Minute, int Cooldown, int Location, int CooldownP2, int LocationP2, uint Path), bool>();
+			dfs2(0, 0, 0, 0, 0, 0, 0, 0, 0);
+			WriteLine($"Part 2: {bestScore}");
+			void dfs2(int location, uint path, int cooldown, int locationP2, uint pathP2, int cooldownP2, uint enableMask, int total, int moves)
 			{
-				//(int premod, int premodP2) = (cooldown, cooldownP2);
 				bool cached = cache2.Read((moves, cooldown, location, cooldownP2, locationP2, path));
 				if (cached) return;
 				bestScore = Math.Max(bestScore, total);
-				var exploreables = new List<(string location, string path, int boost, int cost)>();
-				var exploreablesP2 = new List<(string location, string path, int boost, int cost)>();
+				var exploreables = new List<(int location, int path, int boost, int cost)>();
+				var exploreablesP2 = new List<(int location, int path, int boost, int cost)>();
 
 				int best = 0;
 				int remainingTurns = 26 - moves;
@@ -244,17 +152,14 @@ namespace AoC2022
 					{
 						if (valves2[location].Rate != 0 && (enableMask & valveMask[location]) == 0)
 						{
-							//best = valves2[locationP2].Rate;
-							//rate += valves2[location].Rate;
 							enableMask |= valveMask[location];
 						}
-						foreach (var valve in valves2[location].Leads)
+						foreach (var (Destination, Cost) in valves2[location].Leads)
 						{
-							if (((path | pathP2) & valveMask[valve.Destination]) != 0) continue;
-							exploreables.Add((valve.Destination, $"{valve.Destination}", valves2[valve.Destination].Rate, valve.Cost + 1));
+							if (((path | pathP2) & valveMask[Destination]) != 0) continue;
+							exploreables.Add((Destination, Destination, valves2[Destination].Rate, Cost + 1));
 						}
 					}
-					// Player 2 (elephant)
 					if (cooldownP2 > 0)
 					{
 						cooldownP2--;
@@ -268,17 +173,17 @@ namespace AoC2022
 						foreach (var (Destination, Cost) in valves2[locationP2].Leads)
 						{
 							if (((path | pathP2) & valveMask[Destination]) != 0) continue;
-							exploreablesP2.Add((Destination, $"{Destination}", valves2[Destination].Rate, Cost + 1));
+							exploreablesP2.Add((Destination, Destination, valves2[Destination].Rate, Cost + 1));
 						}
 					}
 					
 					if (exploreables.Count == 0)
 					{
-						exploreables.Add((location, $"{location}", 0, 0));
+						exploreables.Add((location, location, 0, 0));
 					}
 					if (exploreablesP2.Count == 0)
 					{
-						exploreablesP2.Add((locationP2, $"{locationP2}", 0, 0));
+						exploreablesP2.Add((locationP2, locationP2, 0, 0));
 					}
 					foreach (var act in exploreables)
 					{
@@ -290,10 +195,6 @@ namespace AoC2022
 						foreach (var actP2 in exploreablesP2)
 						{
 							if (act.path == actP2.path) continue;
-							if (moves == 0)
-							{
-								WriteLine($"{act.path}/{actP2.path}: {watch.Elapsed}");
-							}
 							int turned = Math.Sign(act.boost) + Math.Sign(actP2.boost);
 
 							int newTotal = total + act.boost * Math.Max(0, remainingTurns - act.cost) + actP2.boost * Math.Max(0, remainingTurns - actP2.cost);
