@@ -99,15 +99,12 @@ namespace AoC2022
 			WriteLine($"Part 1: {bestScore}");
 			explore.Clear();*/
 
-			var exploreCoop = new Queue<(string location, uint path, int cooldown, string locationP2, uint pathP2, int cooldownP2, uint mask, int rate, int total, int moves, int enabled)>(20_000_000);
-			var exploreNextCoop = new Queue<(string location, uint path, int cooldown, string locationP2, uint pathP2, int cooldownP2, uint mask, int rate, int total, int moves, int enabled)>(20_000_000);
-			var exploreNextCoop2 = new Queue<(string location, uint path, int cooldown, string locationP2, uint pathP2, int cooldownP2, uint mask, int rate, int total, int moves, int enabled)>(20_000_000);
-			var exploreNextCoop3 = new Queue<(string location, uint path, int cooldown, string locationP2, uint pathP2, int cooldownP2, uint mask, int rate, int total, int moves, int enabled)>(20_000_000);
-			var exploreNextCoop4 = new Queue<(string location, uint path, int cooldown, string locationP2, uint pathP2, int cooldownP2, uint mask, int rate, int total, int moves, int enabled)>(20_000_000);
+			/*var exploreCoop = new Queue<(string location, uint path, int cooldown, string locationP2, uint pathP2, int cooldownP2, uint mask, int rate, int total, int moves, int enabled)>();
+			var exploreNextCoop = new Queue<(string location, uint path, int cooldown, string locationP2, uint pathP2, int cooldownP2, uint mask, int rate, int total, int moves, int enabled)>();
 			var terminatedCoop = new Dictionary<(int rate, int total), bool>();
 			int bestScoreCoop = 0;
 			int bestProjectedCoop = 0;
-			int bestRateCoop = 0;
+			int bestRateCoop = 0;*/
 
 			int maxRate = valves.Sum(v => v.Value.Rate);
 			int maxValves = valves.Count(v => v.Value.Rate > 0);
@@ -157,141 +154,158 @@ namespace AoC2022
 				mask <<= 1;
 			}
 
-			void processCoop(string location, uint path, int cooldown, string locationP2, uint pathP2, int cooldownP2, uint enableMask, int rate, int total, int moves, int enabled)
+			int cacheHit = 0;
+			System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
+			watch.Start();
+			
+			var cache = new Dictionary<(int Minute, int Cooldown, string Location, uint Path), int>();
+			var x = dfs("AA", 0, 0, 0, 0, 0, 0, 0);
+			watch.Stop();
+			WriteLine($"Part 1: {x}\nThat took {watch.ElapsedMilliseconds}ms (or {watch.Elapsed})");
+			;
+			int dfs(string location, uint path, int cooldown, uint enableMask, int rate, int total, int moves, int enabled)
 			{
-				total += rate;
-				bool actions = false;
+				int premod = cooldown;
+				int cached = cache.Read((moves, cooldown, location, path), -1);
+				if (cached != -1)
+				{
+					cacheHit++;
+					return rate + cached;
+				}
+
 				var exploreables = new List<(string location, string path, int boost, int cost)>();
 				var exploreablesP2 = new List<(string location, string path, int boost, int cost)>();
-				int projected = 0;
-				bool cooled = cooldown + cooldownP2 > 0;
-				if (location != null && moves < 26)
+
+				int best = 0;
+
+				if (moves < 29)
 				{
-					int currentTurn = moves + 1;
-					int remainingTurns = 26 - currentTurn;
-					projected = total + rate * remainingTurns;
-					if (remainingTurns > 1 && rate != maxRate && enabled != maxValves)
+					if (cooldown > 0)
 					{
-						if (moves > 8)
-						{
-							//float gradual = Math.Min((moves - 8) / 4f, 1);
-							float gradual = 1;
-							//if (path.Length / 3 > 16) gradual = 1.1f;
-							float scoreThreshold = 0.75f * gradual;
-							float rateThreshold = 0.0f * gradual;
-							float projectedThreshold = 0.25f * gradual;
-							if (total < bestScoreCoop * scoreThreshold || rate < bestRateCoop * rateThreshold || projected < bestProjectedCoop * projectedThreshold) return;
-							if (enabled < 2 + moves / 6) return;
-						}
-						// Player 1 (you)
-						if (cooldown > 0)
-						{
-							cooldown--;
-						}
-						if (cooldown <= 0)
-						{
-							if (valves2[location].Rate != 0 && (enableMask & valveMask[location]) == 0)
-							{
-								exploreables.Add((location, $"{location}", valves2[location].Rate, 1));
-								actions = true;
-							}
-							foreach (var valve in valves2[location].Leads)
-							{
-								//string[] history = path.Split('¤');
-								if (((path | pathP2) & valveMask[valve.Destination]) != 0) continue;
-								exploreables.Add((valve.Destination, $"{valve.Destination}", 0, valve.Cost));
-							}
-						}
-						// Player 2 (elephant)
-						if (cooldownP2 > 0)
-						{
-							cooldownP2--;
-						}
-						if (cooldownP2 <= 0)
-						{
-							if (valves2[locationP2].Rate != 0 && (enableMask & valveMask[locationP2]) == 0)
-							{
-								exploreablesP2.Add((locationP2, $"{locationP2}", valves2[locationP2].Rate, 1));
-							}
-							foreach (var valve in valves2[locationP2].Leads)
-							{
-								//string[] history = pathP2.Split('¤');
-								if (((path | pathP2) & valveMask[valve.Destination]) != 0) continue;
-								exploreablesP2.Add((valve.Destination, $"{valve.Destination}", 0, valve.Cost));
-							}
-							//exploreablesP2.RemoveAll(act => exploreables.Any(act2 => act.path == act2.path));
-						}
-
-						if (exploreables.Count == 0)
-						{
-							exploreables.Add((location, $"{location}", 0, 0));
-						}
-						if (exploreablesP2.Count == 0)
-						{
-							exploreablesP2.Add((locationP2, $"{locationP2}", 0, 0));
-						}
-						foreach (var act in exploreables)
-						{
-							foreach (var actP2 in exploreablesP2)
-							{
-								if (act.path == actP2.path) continue;
-								//WriteLine($"{act.path} and {actP2.path}");
-								int turned = Math.Sign(act.boost) + Math.Sign(actP2.boost);
-								exploreNextCoop.Enqueue((act.location, path | valveMask[act.path], cooldown + act.cost, actP2.location, pathP2 | valveMask[actP2.path], cooldownP2 + actP2.cost, enableMask | (act.boost>0 ? valveMask[location] : 0) | (actP2.boost > 0 ? valveMask[locationP2] : 0), rate + act.boost + actP2.boost, total, moves + 1, enabled + turned));
-								if (act.cost + actP2.cost > 0) actions = true;
-							}
-						}
-
+						cooldown--;
 					}
-					else
+					if (cooldown <= 0)
 					{
-						cooled = false;
-						cooldown = cooldownP2 = 0;
+						if (valves2[location].Rate != 0 && (enableMask & valveMask[location]) == 0)
+						{
+							rate += valves2[location].Rate;
+							enableMask |= valveMask[location];
+						}
+						foreach (var (Destination, Cost) in valves2[location].Leads)
+						{
+							if ((path & valveMask[Destination]) != 0) continue;
+							exploreables.Add((Destination, $"{Destination}", 0, Cost + 1));
+						}
+					}
+					if (exploreables.Count == 0)
+					{
+						exploreables.Add((location, $"{location}", 0, 0));
+					}
+					foreach (var act in exploreables)
+					{
+						if (moves == 0)
+						{
+							//WriteLine($"{act.path}: {watch.Elapsed}");
+						}
+						int turned = Math.Sign(act.boost);
+						best = Math.Max(best, dfs(act.location, path | valveMask[act.path], cooldown + act.cost, enableMask | (act.boost > 0 ? valveMask[location] : 0), rate + act.boost, total, moves + 1, enabled + turned));
 					}
 				}
-				if (total > bestScoreCoop)
-				{
-					bestScoreCoop = total;
-				}
-				if (rate > bestRateCoop)
-				{
-					bestRateCoop = rate;
-				}
-				if (projected > bestProjectedCoop)
-				{
-					bestProjectedCoop = projected;
-				}
-				if (!actions && !cooled)
-				{
-					terminatedCoop[(rate, total)] = true;
-				}
+
+				cache[(moves, premod, location, path)] = best; // Math.Max(best, cache.Read((moves, location, cooldown, locationP2, cooldownP2, enableMask)));
+				return rate + best;
 			}
-
-			processCoop("AA", 0, 0, "AA", 0, 0, 0, 0, 0, 0, 0);
-			for (int i = 0; i < 26; i++)
+			cache.Clear();
+			watch.Restart();
+			int bestScore = 0;
+			var cache2 = new Dictionary<(int Minute, int Cooldown, string Location, int CooldownP2, string LocationP2, uint Path), bool>();
+			dfs2("AA", 0, 0, "AA", 0, 0, 0, 0, 0);
+			watch.Stop();
+			WriteLine($"Part 2: {bestScore}\nThat took {watch.ElapsedMilliseconds}ms (or {watch.Elapsed})");
+			void dfs2(string location, uint path, int cooldown, string locationP2, uint pathP2, int cooldownP2, uint enableMask, int total, int moves)
 			{
-				WriteLine($"Minute {i}, have {exploreCoop.Count} options [{bestRateCoop}/{maxRate} rate]");
-				while (exploreCoop.Count > 0)
+				//(int premod, int premodP2) = (cooldown, cooldownP2);
+				bool cached = cache2.Read((moves, cooldown, location, cooldownP2, locationP2, path));
+				if (cached) return;
+				bestScore = Math.Max(bestScore, total);
+				var exploreables = new List<(string location, string path, int boost, int cost)>();
+				var exploreablesP2 = new List<(string location, string path, int boost, int cost)>();
+
+				int best = 0;
+				int remainingTurns = 26 - moves;
+
+				if (moves < 25)
 				{
-					var exp = exploreCoop.Dequeue();
-					processCoop(exp.location, exp.path, exp.cooldown, exp.locationP2, exp.pathP2, exp.cooldownP2, exp.mask, exp.rate, exp.total, exp.moves, exp.enabled);
+					if (cooldown > 0)
+					{
+						cooldown--;
+					}
+					if (cooldown <= 0)
+					{
+						if (valves2[location].Rate != 0 && (enableMask & valveMask[location]) == 0)
+						{
+							//best = valves2[locationP2].Rate;
+							//rate += valves2[location].Rate;
+							enableMask |= valveMask[location];
+						}
+						foreach (var valve in valves2[location].Leads)
+						{
+							if (((path | pathP2) & valveMask[valve.Destination]) != 0) continue;
+							exploreables.Add((valve.Destination, $"{valve.Destination}", valves2[valve.Destination].Rate, valve.Cost + 1));
+						}
+					}
+					// Player 2 (elephant)
+					if (cooldownP2 > 0)
+					{
+						cooldownP2--;
+					}
+					if (cooldownP2 <= 0)
+					{
+						if (valves2[locationP2].Rate != 0 && (enableMask & valveMask[locationP2]) == 0)
+						{
+							enableMask |= valveMask[locationP2];
+						}
+						foreach (var (Destination, Cost) in valves2[locationP2].Leads)
+						{
+							if (((path | pathP2) & valveMask[Destination]) != 0) continue;
+							exploreablesP2.Add((Destination, $"{Destination}", valves2[Destination].Rate, Cost + 1));
+						}
+					}
+					
+					if (exploreables.Count == 0)
+					{
+						exploreables.Add((location, $"{location}", 0, 0));
+					}
+					if (exploreablesP2.Count == 0)
+					{
+						exploreablesP2.Add((locationP2, $"{locationP2}", 0, 0));
+					}
+					foreach (var act in exploreables)
+					{
+						if (moves == 0)
+						{
+							cache2.Clear();
+						}
+
+						foreach (var actP2 in exploreablesP2)
+						{
+							if (act.path == actP2.path) continue;
+							if (moves == 0)
+							{
+								WriteLine($"{act.path}/{actP2.path}: {watch.Elapsed}");
+							}
+							int turned = Math.Sign(act.boost) + Math.Sign(actP2.boost);
+
+							int newTotal = total + act.boost * Math.Max(0, remainingTurns - act.cost) + actP2.boost * Math.Max(0, remainingTurns - actP2.cost);
+
+							dfs2(act.location, path | valveMask[act.path], cooldown + act.cost, actP2.location, pathP2 | valveMask[actP2.path], cooldownP2 + actP2.cost, enableMask | (act.boost > 0 ? valveMask[location] : 0) | (actP2.boost > 0 ? valveMask[locationP2] : 0), newTotal, moves + 1);
+						}
+					}
 				}
-				(exploreCoop, exploreNextCoop) = (exploreNextCoop, exploreCoop);
-				//terminated
-				int termed = 100;
-				foreach (var path in terminatedCoop.OrderByDescending(s => s.Key.total + s.Key.rate * (26 - i)))
-				{
-					exploreCoop.Enqueue((null, 0, 0, null, 0, 0, 0, path.Key.rate, path.Key.total, 0, 0));
-					termed--;
-					if (0 > termed) break;
-				}
-				WriteLine($"projected: {bestProjectedCoop}");
-				//WriteLine(terminatedCoop.Count);
-				terminatedCoop.Clear();
+				
+				// I've no idea what the heck is wrong with this cache. It's useless. As such, I'm only using it to stop early here.
+				cache2[(moves + 1, cooldown, location, cooldownP2, locationP2, path)] = true;
 			}
-			WriteLine($"Part 2: {bestScoreCoop}");
-			exploreCoop.Clear();
-			;
 		}
 	}
 }
