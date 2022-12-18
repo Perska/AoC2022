@@ -4,9 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Reflection;
+using System.IO;
 using System.Windows.Forms;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Audio;
 
 namespace AoC2022
 {
@@ -26,10 +29,10 @@ namespace AoC2022
 			public Font Font;
 			//private Thread thread;
 
-			public const int WindowWidth = 640;
-			public const int WindowHeight = 480;
-			public const int GraphicsWidth = WindowWidth;
-			public const int GraphicsHeight = WindowHeight;
+			public static int WindowWidth = 640;
+			public static int WindowHeight = 480;
+			public static int GraphicsWidth = WindowWidth;
+			public static int GraphicsHeight = WindowHeight;
 
 			public Visual()
 			{
@@ -75,6 +78,72 @@ namespace AoC2022
 
 				//Application.Run();
 				//Application.Run(Window);
+			}
+
+			private volatile bool change;
+
+			public void Resize(int width, int height)
+			{
+				WindowWidth = GraphicsWidth = width;
+				WindowHeight = GraphicsHeight = height;
+				change = true;
+				while (change)
+				{
+					Thread.Yield();
+				}
+			}
+			public void _resize()
+			{
+				if (!change) return;
+				var newSize = new System.Drawing.Size(WindowWidth, WindowHeight);
+				Window.MaximumSize = Window.MinimumSize = System.Drawing.Size.Empty;
+				Window.ClientSize = newSize;
+				Window.MaximumSize = Window.Size;
+				Window.MinimumSize = Window.Size;
+
+				GraphicsDevice.PresentationParameters.BackBufferWidth = GraphicsWidth;
+				GraphicsDevice.PresentationParameters.BackBufferHeight = GraphicsHeight;
+				GraphicsDevice.Reset();
+
+				RenderTarget.Dispose();
+				RenderTarget2.Dispose();
+				RenderTarget = new RenderTarget2D(GraphicsDevice, GraphicsWidth, GraphicsHeight, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
+				RenderTarget2 = new RenderTarget2D(GraphicsDevice, GraphicsWidth, GraphicsHeight, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
+				change = false;
+			}
+
+			public Texture2D EmbeddedTexture(string filename, GraphicsDevice device)
+			{
+				Texture2D texture = null;
+				try
+				{
+					Assembly assembly = Assembly.GetExecutingAssembly();
+					Stream stream = assembly.GetManifestResourceStream($"AoC2022.{filename}");
+					texture = Texture2D.FromStream(device, stream);
+					stream.Dispose();
+				}
+				catch (Exception e)
+				{
+					MessageBox.Show($"Could not read file ({filename}):\n" + e.ToString());
+				}
+				return texture;
+			}
+
+			public SoundEffect EmbeddedSound(string filename)
+			{
+				SoundEffect sfx = null;
+				try
+				{
+					Assembly assembly = Assembly.GetExecutingAssembly();
+					Stream stream = assembly.GetManifestResourceStream($"AoC2022.{filename}");
+					sfx = SoundEffect.FromStream(stream);
+					stream.Dispose();
+				}
+				catch (Exception e)
+				{
+					MessageBox.Show($"Could not read file ({filename}):\n" + e.ToString());
+				}
+				return sfx;
 			}
 
 			public void DrawBox(Rectangle rectangle, Color color)

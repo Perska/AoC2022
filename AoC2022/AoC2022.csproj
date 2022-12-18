@@ -81,5 +81,17 @@
     <EmbeddedResource Include="gohu14.bmp" />
     <EmbeddedResource Include="gohu14.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="block.png" />
+    <EmbeddedResource Include="wall.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="bg.png" />
+    <EmbeddedResource Include="numbers.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="move.wav" />
+    <EmbeddedResource Include="stack.wav" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

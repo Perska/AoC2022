@@ -69,7 +69,7 @@ namespace AoC2022
 			OtherBuffer = otherBuffer;
 			visual.GraphicsDevice.SetRenderTarget(otherBuffer ? visual.RenderTarget2 : visual.RenderTarget);
 			if (clear) visual.GraphicsDevice.Clear(Color.Transparent);
-			if (autoSpriteBatch) visual.SpriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
+			if (autoSpriteBatch) visual.SpriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointWrap);
 		}
 
 		static void StopDraw()
@@ -127,12 +127,16 @@ namespace AoC2022
 				while (true)
 				{
 					long elaps;
-					while ((elaps = stopwatch.ElapsedMilliseconds) < next) ;
+					while ((elaps = stopwatch.ElapsedMilliseconds) < next)
+					{
+						visual._resize();
+					}
 					next = elaps + frameSpeed;
 					waitScreen = false;
 					Application.DoEvents();
 					if (!busy)
 					{
+						visual._resize();
 						visual.GraphicsDevice.Clear(Color.Transparent);
 						visual.SpriteBatch.Begin();
 						visual.SpriteBatch.Draw(visual.RenderTarget, Vector2.Zero, Color.White);
