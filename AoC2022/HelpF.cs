@@ -53,5 +53,11 @@ namespace AoC2022
 			if (dict.ContainsKey(key)) return dict[key];
 			return default(V);
 		}
+
+		public static V Read<K, V>(this Dictionary<K, V> dict, K key, V def)
+		{
+			if (dict.ContainsKey(key)) return dict[key];
+			return def;
+		}
 	}
 }

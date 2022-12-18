@@ -49,6 +49,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Days\Day18.cs" />
+    <Compile Include="Days\Day17.cs" />
+    <Compile Include="Days\Day16.cs" />
+    <Compile Include="Days\Day15.cs" />
+    <Compile Include="Days\Day14.cs" />
+    <Compile Include="Days\Day13.cs" />
+    <Compile Include="Days\Day12.cs" />
+    <Compile Include="Days\Day11.cs" />
+    <Compile Include="Days\Day10.cs" />
+    <Compile Include="Days\Day09.cs" />
+    <Compile Include="Days\Day08.cs" />
+    <Compile Include="Days\Day07.cs" />
+    <Compile Include="Days\Day06.cs" />
     <Compile Include="Days\Day05.cs" />
     <Compile Include="Days\Day04.cs" />
     <Compile Include="Days\Day03.cs" />
