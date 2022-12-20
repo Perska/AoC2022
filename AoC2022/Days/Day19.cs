@@ -127,9 +127,7 @@ namespace AoC2022
 				}
 				return score;
 			}
-
-			int maxScore = 0;
-			int bestFrom = 0;
+			
 			int qualities = 0;
 
 			//blueprints.RemoveAt(1);
