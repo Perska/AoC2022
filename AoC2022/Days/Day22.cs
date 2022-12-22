@@ -42,20 +42,12 @@ namespace AoC2022
 			;
 
 			var move = new (int x, int y)[] { (1, 0), (0, 1), (-1, 0), (0, -1) };
-			/*var moveBack = new Dictionary<(int x, int y), int>() {
-				{ (1, 0), 0 },
-				{ (0, 1), 0 },
-				{ (-1, 0), 0 },
-				{ (0, -1), 0 }
-			};*/
 			var moveChar = new[] { '>', 'v', '<', '^' };
 			var rotChar = new[] { 'U', 'R', 'D', 'L' };
 
 			{
 				int x = map.Keys.First().X, y = 0;
 				int direction = 0;
-
-				var visits = new Dictionary<(int x, int y), char>();
 
 				for (int i = 0; i < path.Length; i++)
 				{
@@ -86,7 +78,6 @@ namespace AoC2022
 						{
 							x = nx;
 							y = ny;
-							visits[(x, y)] = moveChar[direction];
 						}
 						else
 						{
@@ -115,16 +106,7 @@ namespace AoC2022
 					}
 				}
 			}
-
-			for (int sy = 0; sy < 4; sy++)
-			{
-				for (int sx = 0; sx < 4; sx++)
-				{
-					Write(cube[sx + sy * 4]);
-				}
-				WriteLine();
-			}
-
+			
 			for (int sy = 0; sy < 4; sy++)
 			{
 				for (int sx = 0; sx < 4; sx++)
@@ -140,7 +122,6 @@ namespace AoC2022
 							int target = cube[nx + ny * 4];
 							if (target != 0)
 							{
-								//WriteLine($"Face {face}'s {moveChar[i]} connects to face {target}");
 								connects[face, i] = (target, 0);
 							}
 						}
@@ -175,70 +156,24 @@ namespace AoC2022
 							if (ta.f != 0 && i != ta.f)
 							{
 								int rot = (fc.r + ta.r + r + 4) % 4;
-								//WriteLine($"Face {i}'s {moveChar[f]} connects to face {ta.f} via {face}, through {moveChar[d]}");
 								connects[i, f] = (ta.f, rot);
-								//WriteLine();
 							}
 						skip:;
 						}
 					}
 				}
-				//WriteLine();
 			}
-			
-			/*ReadLine();
-			Clear();
 
-			int[] cube2 = new int[64];
-			for (int sy = 0; sy < 4; sy++)
-			{
-				for (int sx = 0; sx < 4; sx++)
-				{
-					face = cube[sx + sy * 4];
-					if (face == 0) continue;
-					SetCursorPosition(sx * 8 + 3, sy * 6);
-					Write($"{moveChar[(connects[face, 3].r + 3) % 4]}");
-					SetCursorPosition(sx * 8 + 3, sy * 6 + 1);
-					Write($"{connects[face, 3].f}");
-					SetCursorPosition(sx * 8, sy * 6 + 2);
-					Write($"{moveChar[(connects[face, 2].r + 2) % 4]}{connects[face, 2].f}[{face}]{connects[face, 0].f}{moveChar[(connects[face, 0].r) % 4]}");
-					SetCursorPosition(sx * 8 + 3, sy * 6 + 3);
-					Write($"{connects[face, 1].f}");
-					SetCursorPosition(sx * 8 + 3, sy * 6 + 4);
-					Write($"{moveChar[(connects[face, 1].r + 1) % 4]}");
-				}
-				//WriteLine();
-			}
-			ReadLine();
-			Clear();*/
 			{
 				int x = map.Keys.First().X, y = 0;
 				int direction = 0;
 
-				var visits = new Dictionary<(int x, int y), char>();
-				visits[(x, y)] = moveChar[direction];
-
 				for (int i = 0; i < path.Length; i++)
-				//while (true)
 				{
 					int steps = 0;
-					//var key = ReadKey(true);
 					int cellX = x / cubeSize;
 					int cellY = y / cubeSize;
 					face = cube[cellX + cellY * 4];
-
-					/*if (key.Key == ConsoleKey.LeftArrow)
-					{
-						direction = (direction + 3) % 4;
-					}
-					else if (key.Key == ConsoleKey.RightArrow)
-					{
-						direction = (direction + 1) % 4;
-					}
-					else if (key.Key == ConsoleKey.UpArrow)
-					{
-						steps = 1;
-					}/**/
 
 					if (path[i] == "L")
 					{
@@ -251,95 +186,64 @@ namespace AoC2022
 					else
 					{
 						steps = int.Parse(path[i]);
-					}/**/
-
-					for (int j = 0; j < steps; j++)
-					{
-						var m = move[direction];
-						int nx = x, ny = y;
-						int nextdirection = direction;
-						//do
+						for (int j = 0; j < steps; j++)
 						{
-							nx = nx + m.x;
-							ny = ny + m.y;
-							int ncx = (int)Math.Floor(nx / (float)cubeSize);
-							int ncy = (int)Math.Floor(ny / (float)cubeSize);
-							int mindex = Array.IndexOf(move, (ncx - cellX, ncy - cellY));
-							if (mindex != -1)
+							var m = move[direction];
+							int nx = x, ny = y;
+							int nextdirection = direction;
 							{
-								var (f, r) = connects[face, mindex];
-								int cindex = Array.IndexOf(cube, f);
-								int cx = cindex % 4;
-								int cy = cindex / 4;
-								int ox = (nx + cubeSize) % cubeSize - cubeSize / 2;
-								int oy = (ny + cubeSize) % cubeSize - cubeSize / 2;
-								Title = $"{nx}, {ny} | {ox}, {oy}";
-								switch (r)
+								nx = nx + m.x;
+								ny = ny + m.y;
+								int ncx = (int)Math.Floor(nx / (float)cubeSize);
+								int ncy = (int)Math.Floor(ny / (float)cubeSize);
+								int mindex = Array.IndexOf(move, (ncx - cellX, ncy - cellY));
+								if (mindex != -1)
 								{
-									case 0:
-										break;
-									case 1:
-										nextdirection = (direction + 1) % 4;
-										(ox, oy) = (-oy - 1, ox);
-										break;
-									case 2:
-										nextdirection = (direction + 2) % 4;
-										(ox, oy) = (-ox - 1, -oy - 1);
-										break;
-									case 3:
-										nextdirection = (direction + 3) % 4;
-										(ox, oy) = (oy, -ox - 1);
-										break;
+									var (f, r) = connects[face, mindex];
+									int cindex = Array.IndexOf(cube, f);
+									int cx = cindex % 4;
+									int cy = cindex / 4;
+									int ox = (nx + cubeSize) % cubeSize - cubeSize / 2;
+									int oy = (ny + cubeSize) % cubeSize - cubeSize / 2;
+									switch (r)
+									{
+										case 0:
+											break;
+										case 1:
+											nextdirection = (direction + 1) % 4;
+											(ox, oy) = (-oy - 1, ox);
+											break;
+										case 2:
+											nextdirection = (direction + 2) % 4;
+											(ox, oy) = (-ox - 1, -oy - 1);
+											break;
+										case 3:
+											nextdirection = (direction + 3) % 4;
+											(ox, oy) = (oy, -ox - 1);
+											break;
+									}
+									ox += cubeSize / 2;
+									oy += cubeSize / 2;
+									nx = (cx * cubeSize + ox);
+									ny = (cy * cubeSize + oy);
 								}
-								ox += cubeSize / 2;
-								oy += cubeSize / 2;
-								nx = (cx * cubeSize + ox);
-								ny = (cy * cubeSize + oy);
+							}
+
+							if (map.Read((nx, ny)) != '#')
+							{
+								x = nx;
+								y = ny;
+								direction = nextdirection;
+							}
+							else
+							{
+								break;
 							}
 						}
-
-						if (map.Read((nx, ny)) != '#')
-						{
-							x = nx;
-							y = ny;
-							direction = nextdirection;
-							visits[(x, y)] = moveChar[direction];
-						}
-						else
-						{
-							break;
-						}
 					}
-					visits[(x, y)] = moveChar[direction];
-					/*SetCursorPosition(0, 0);
-					for (int sy = 0; sy < maxY; sy++)
-					{
-						for (int sx = 0; sx < maxX; sx++)
-						{
-							Write(visits.Read((sx, sy), map.Read((sx, sy))));
-						}
-						WriteLine();
-					}
-					WriteLine($"X/Y: {x}, {y} ({cellX}, {cellY}) \nCurrently on face {face}  ");
-					SetCursorPosition(x, y);
-					Write(rotChar[(direction + 1) % 4]);*/
 				}
-
-
-				/*Clear();
-				SetCursorPosition(0, 0);
-				for (int sy = 0; sy < maxY; sy++)
-				{
-					for (int sx = 0; sx < maxX; sx++)
-					{
-						Write(visits.Read((sx, sy), map.Read((sx, sy))));
-					}
-					WriteLine();
-				}*/
 				WriteLine($"Part 2: {(y + 1) * 1000 + (x + 1) * 4 + direction}");
-			}
-
-
+			}	
 		}
 	}
 }
