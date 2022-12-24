@@ -145,8 +145,8 @@ namespace AoC2022
 					state++;
 				}
 			}
-			WriteLine(part1);
-			WriteLine(part2);
+			WriteLine($"Part 1: {part1}");
+			WriteLine($"Part 2: {part2}");
 		}
 	}
 }
